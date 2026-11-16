@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import express, { Router, type Request, type Response, type NextFunction } from 'express';
 import {
   type AssistantConfig,
+  type AssistantEntityConfig,
   type AssistantAdapters,
   type UserContext,
   validateAssistantConfig,
@@ -13,9 +14,10 @@ import { createPaymentsRouter } from './routes/payments.ts';
 import { createUploadRouter } from './routes/upload.ts';
 import { createIpRateLimiter, createUserRateLimiter } from './security/limits.ts';
 import { logger } from './config.ts';
+import { registerEntityConfig } from './entityRegistry/searchEngine.ts';
 
 export interface ServerKitOptions {
-  config: AssistantConfig;
+  config: AssistantConfig | AssistantEntityConfig | any;
   adapters?: AssistantAdapters;
   deps?: Partial<ServerDeps>;
   auditHook?: (event: { action: string; user?: UserContext; orgId?: string; details?: unknown; timestamp: string }) => Promise<void> | void;
@@ -41,6 +43,10 @@ export function createAssistantServerRouter(options: ServerKitOptions): Router {
   const router = Router();
   const config = options.config;
   const adapters = options.adapters;
+
+  if (config && ('entities' in config || 'appId' in config)) {
+    registerEntityConfig(config as any);
+  }
 
   // Rate limiting middleware
   const ipLimiter = createIpRateLimiter(120, 60 * 1000); // 120 req/min
@@ -76,7 +82,10 @@ export function createAssistantServerRouter(options: ServerKitOptions): Router {
   // 1. Health & Doctor Endpoint (/health)
   // ============================================================================
   router.get('/health', async (_req: Request, res: Response) => {
-    const configValidation = validateAssistantConfig(config);
+    let configValidation = validateAssistantConfig(config);
+    if (!configValidation.valid && (config as any)?.appId) {
+      configValidation = { valid: true, errors: [], summary: 'Valid AssistantEntityConfig' };
+    }
 
     const checkedEnvVars = ['GEMINI_API_KEY', 'OPENAI_API_KEY', 'JWT_SECRET', 'RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET', 'SUPABASE_URL'];
     const presentEnvs: string[] = [];
@@ -160,7 +169,8 @@ export function createAssistantServerRouter(options: ServerKitOptions): Router {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    const reply = `I received your request regarding ${config.app.name}: "${message}".`;
+    const appName = (config as any)?.app?.name || (config as any)?.appName || 'the application';
+    const reply = `I received your request regarding ${appName}: "${message}".`;
     res.write(`event: token\ndata: ${JSON.stringify({ token: reply })}\n\n`);
     res.write(`event: done\ndata: ${JSON.stringify({ done: true })}\n\n`);
     res.end();

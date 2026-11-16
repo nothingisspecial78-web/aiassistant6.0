@@ -10,7 +10,6 @@ import type {
   EntitySearchResult,
   EntityTypeDefinition,
 } from '@ai-assistant/core';
-import { APP_ASSISTANT_CONFIGS } from '../../../../assistant.config.ts';
 
 const dynamicConfigRegistry = new Map<string, AssistantEntityConfig>();
 
@@ -19,7 +18,7 @@ export function registerEntityConfig(config: AssistantEntityConfig): void {
 }
 
 export function getRegisteredEntityConfig(appId: string): AssistantEntityConfig | undefined {
-  return dynamicConfigRegistry.get(appId) || APP_ASSISTANT_CONFIGS[appId];
+  return dynamicConfigRegistry.get(appId);
 }
 
 function normalizeBasic(input: string): string {
