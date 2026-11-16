@@ -31,10 +31,12 @@ function clientIpKey(req: Request): string {
   return ipKeyGenerator(extractForwardedIp(req));
 }
 
-export function createIpRateLimiter(cfg: ServerConfig) {
+export function createIpRateLimiter(cfgOrMax: ServerConfig | number = 120, windowMs?: number) {
+  const max = typeof cfgOrMax === 'number' ? cfgOrMax : (cfgOrMax?.rateLimitMaxIp ?? 120);
+  const win = typeof cfgOrMax === 'number' ? (windowMs || 60000) : (cfgOrMax?.rateLimitWindowMs ?? 60000);
   return rateLimit({
-    windowMs: cfg.rateLimitWindowMs,
-    max: cfg.rateLimitMaxIp,
+    windowMs: win,
+    max,
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: (req: Request) => clientIpKey(req),
@@ -42,10 +44,12 @@ export function createIpRateLimiter(cfg: ServerConfig) {
   });
 }
 
-export function createUserRateLimiter(cfg: ServerConfig) {
+export function createUserRateLimiter(cfgOrMax: ServerConfig | number = 60, windowMs?: number) {
+  const max = typeof cfgOrMax === 'number' ? cfgOrMax : (cfgOrMax?.rateLimitMaxUser ?? 60);
+  const win = typeof cfgOrMax === 'number' ? (windowMs || 60000) : (cfgOrMax?.rateLimitWindowMs ?? 60000);
   return rateLimit({
-    windowMs: cfg.rateLimitWindowMs,
-    max: cfg.rateLimitMaxUser,
+    windowMs: win,
+    max,
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: (req: Request) => {
