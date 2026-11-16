@@ -2,6 +2,10 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express, { type Express, type NextFunction, type Request, type Response, type Router } from 'express';
+import { MemoryDataAdapter, type AssistantAdapters } from '@ai-assistant/core';
+import { createAssistantServerRouter } from '@ai-assistant/server';
+import { libraryAssistantConfig } from '../../assistant.config.ts';
+
 
 export interface BookRecord {
   id: string;
@@ -219,8 +223,24 @@ export function createLibraryApp(store = createLibraryStore()): Express {
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', service: 'second-demo-app' });
   });
+
+  // Mount Universal Assistant SDK drop-in routes
+  const adapters: AssistantAdapters = {
+    data: new MemoryDataAdapter({
+      books: store.books as any,
+      loans: store.loans as any,
+    }),
+  };
+  const assistantRouter = createAssistantServerRouter({
+    config: libraryAssistantConfig,
+    adapters,
+  });
+  app.use('/assistant', assistantRouter);
+  app.use('/api/assistant', assistantRouter);
+
   app.use('/api/demo/second-demo', router);
   app.use('/', router);
+
 
   return app;
 }

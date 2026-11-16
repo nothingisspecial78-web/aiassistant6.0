@@ -20,4 +20,6 @@ qa-artifacts/**/*.mp4
 qa-artifacts/**/*.har
 qa-artifacts/**/*.trace
 qa-artifacts/*.png
+*.zip
+*.tgz
 

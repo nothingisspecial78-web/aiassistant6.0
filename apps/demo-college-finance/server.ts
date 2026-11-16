@@ -3,6 +3,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express, { type Express, type NextFunction, type Request, type Response, type Router } from 'express';
 import * as XLSX from 'xlsx';
+import { MemoryDataAdapter, type AssistantAdapters } from '@ai-assistant/core';
+import { createAssistantServerRouter } from '@ai-assistant/server';
+import { khaznaAssistantConfig } from '../../assistant.config.ts';
+
 
 export interface StudentRecord {
   id: string;
@@ -406,8 +410,25 @@ export function createCollegeFinanceApp(store = createCollegeFinanceStore()): Ex
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', service: 'demo-college-finance' });
   });
+
+  // Mount Universal Assistant SDK drop-in routes
+  const adapters: AssistantAdapters = {
+    data: new MemoryDataAdapter({
+      students: store.students as any,
+      sectors: store.sectors as any,
+      funds: store.funds as any,
+    }),
+  };
+  const assistantRouter = createAssistantServerRouter({
+    config: khaznaAssistantConfig,
+    adapters,
+  });
+  app.use('/assistant', assistantRouter);
+  app.use('/api/assistant', assistantRouter);
+
   app.use('/api/demo/college-finance', router);
   app.use('/', router);
+
 
   return app;
 }

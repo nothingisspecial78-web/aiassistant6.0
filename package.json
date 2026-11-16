@@ -31,8 +31,17 @@
     "perf:bundle": "node node_modules/tsx/dist/cli.mjs scripts/perfBundle.ts",
     "qa:assistant": "node node_modules/tsx/dist/cli.mjs scripts/qa/runAllAgents.ts",
     "qa:webapp": "node node_modules/tsx/dist/cli.mjs scripts/qa/webapp/runWebappQa.ts",
+    "cli": "node node_modules/tsx/dist/cli.mjs scripts/cli.ts",
+    "doctor": "node node_modules/tsx/dist/cli.mjs scripts/cli.ts doctor",
     "qa:all": "npm run perf:bundle && npm run perf:api && npm run perf:scroll && npm run perf:nav"
   },
+  "exports": {
+    "./core": "./packages/core/src/index.ts",
+    "./widget": "./packages/widget/src/index.ts",
+    "./react": "./packages/widget/src/index.ts",
+    "./server": "./packages/server/src/index.ts"
+  },
+
   "dependencies": {
     "@floating-ui/dom": "^1.8.0",
     "@google/genai": "^3.3.0",
